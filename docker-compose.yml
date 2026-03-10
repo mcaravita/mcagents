@@ -1,0 +1,19 @@
+name: mcagents
+
+services:
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcagents-orchestrator
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-openai_compatible}
+      MODEL_NAME: ${MODEL_NAME:-gpt-4.1-mini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      ORCHESTRATOR_MAX_REVIEW_ROUNDS: ${ORCHESTRATOR_MAX_REVIEW_ROUNDS:-2}
+    restart: unless-stopped

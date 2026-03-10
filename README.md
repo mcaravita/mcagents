@@ -32,37 +32,54 @@ src/
     api.py
   main.py
 intellij-plugin/
-  build.gradle.kts
-  settings.gradle.kts
-  src/main/kotlin/com/mcagents/orchestrator/
-    McOrchestratorAction.kt
-    McOrchestratorClient.kt
-  src/main/resources/META-INF/plugin.xml
+  ...
+Dockerfile
+docker-compose.yml
 ```
 
-## Avvio rapido
+## Configurazione
 
-1. Crea virtualenv e installa dipendenze:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-2. Configura variabili:
+1. Copia il file environment:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-3. Avvia API:
+2. Opzionale: abilita modello reale in `.env`:
+
+- `OPENAI_API_KEY=...`
+- `OPENAI_BASE_URL=https://api.openai.com/v1`
+- `MODEL_NAME=gpt-4.1-mini`
+
+Se non imposti la key, il sistema usa fallback mock deterministico.
+
+## Avvio con Docker Compose
 
 ```powershell
-uvicorn src.main:app --reload --port 8080
+docker compose up --build -d
 ```
 
-4. Test endpoint:
+Verifica servizio:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri http://localhost:8080/health
+```
+
+Stop:
+
+```powershell
+docker compose down
+```
+
+## Esempio step by step
+
+1. Avvia stack:
+
+```powershell
+docker compose up --build -d
+```
+
+2. Invia feature request completa:
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/orchestrate `
@@ -70,29 +87,54 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/orchestrate `
   -Body (@{
     feature_id = "feat-001"
     title = "Add user profile endpoint"
-    description = "Expose profile read API with auth and validation"
-    constraints = @("Use FastAPI", "Add tests")
+    description = "Expose authenticated profile endpoint with validation and tests"
+    constraints = @("Use FastAPI", "Keep backward compatibility", "Include negative tests")
     target_stack = "python-fastapi"
+    context_files = @("src/orchestrator/api.py")
   } | ConvertTo-Json)
+```
+
+3. Leggi output:
+
+- `architecture`: piano architect (dipendenze, pattern, guideline, task)
+- `developer_results`: artefatti prodotti dai developer agents
+- `review_reports`: esito review con issue/suggerimenti
+- `final_artifacts`: versione finale aggregata
+- `merged_summary`: riepilogo orchestrazione
+
+4. Salva risultato su file locale (opzionale):
+
+```powershell
+$response = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/orchestrate `
+  -ContentType "application/json" `
+  -Body (Get-Content .\examples.feature-request.json -Raw)
+
+$response | ConvertTo-Json -Depth 20 | Set-Content .\out.orchestration-result.json
+```
+
+5. Spegni stack:
+
+```powershell
+docker compose down
 ```
 
 ## Endpoint principali
 
-- `POST /api/v1/orchestrate`: esegue pipeline completa architect -> developer -> review.
-- `POST /api/v1/architect/plan`: solo output dell'architect.
-- `POST /api/v1/developer/implement`: implementazione singolo task.
-- `POST /api/v1/review/validate`: review su codice generato.
+- `POST /api/v1/orchestrate`: pipeline completa architect -> developer -> review.
+- `POST /api/v1/architect/plan`: solo output architect.
+- `POST /api/v1/developer/implement`: implementazione task singolo.
+- `POST /api/v1/review/validate`: validazione review.
 
 ## Integrazione IntelliJ
 
 La cartella `intellij-plugin` contiene un plugin minimale:
 
-- aggiunge action `Send Selection to MC Orchestrator`
-- legge il testo selezionato
+- action `Send Selection to MC Orchestrator`
+- legge testo selezionato
 - chiama `POST /api/v1/orchestrate`
-- mostra il risultato in dialog
+- mostra risultato in dialog
 
-### Build plugin
+Build plugin:
 
 ```powershell
 cd intellij-plugin
@@ -100,9 +142,3 @@ cd intellij-plugin
 ```
 
 Output ZIP in `intellij-plugin/build/distributions`.
-
-## Note operative
-
-- `src/llm/provider.py` usa un endpoint OpenAI-compatible; se mancano key/url lavora in modalita mock deterministica.
-- Gli agenti usano contratti Pydantic condivisi in `src/common/models.py`.
-- Il coordinamento e la riconciliazione dei feedback sono centralizzati in `src/orchestrator/service.py`.
