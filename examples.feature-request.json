@@ -1,0 +1,12 @@
+{
+  "feature_id": "feat-001",
+  "title": "Add user profile endpoint",
+  "description": "Expose authenticated profile endpoint with validation and tests",
+  "constraints": [
+    "Use FastAPI",
+    "Keep backward compatibility",
+    "Include negative tests"
+  ],
+  "target_stack": "python-fastapi",
+  "context_files": ["src/orchestrator/api.py"]
+}

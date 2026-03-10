@@ -1,0 +1,20 @@
+<idea-plugin>
+    <id>com.mcagents.orchestrator</id>
+    <name>MC Agents Orchestrator</name>
+    <vendor email="dev@mcagents.local">MC Agents</vendor>
+
+    <description>
+        Sends selected feature descriptions to a local multi-agent orchestrator.
+    </description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <actions>
+        <action id="com.mcagents.orchestrator.SendSelection"
+                class="com.mcagents.orchestrator.McOrchestratorAction"
+                text="Send Selection to MC Orchestrator"
+                description="Run architect/developer/review pipeline on selected text">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
